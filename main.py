@@ -3,9 +3,9 @@ import re
 import asyncio
 import logging
 from flask import Flask, request, jsonify
-from services.airtable import get_bundle_record, mark_bundle_image_created
-from services.shopify import get_product_images_by_sku, upload_images_to_bundle
-from services.gemini import generate_bundle_image
+from airtable_service import get_bundle_record, mark_bundle_image_created
+from shopify_service import get_product_images_by_sku, upload_images_to_bundle
+from gemini_service import generate_bundle_image
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

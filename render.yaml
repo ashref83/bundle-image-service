@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: bundle-image-service
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn main:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: AIRTABLE_API_KEY
+        sync: false
+      - key: AIRTABLE_BASE_ID
+        sync: false
+      - key: AIRTABLE_TABLE_NAME
+        value: Bundle offers
+      - key: SHOPIFY_STORE
+        sync: false
+      - key: SHOPIFY_ADMIN_TOKEN
+        sync: false
+      - key: SHOPIFY_API_VERSION
+        value: 2024-10
+      - key: GEMINI_API_KEY
+        sync: false

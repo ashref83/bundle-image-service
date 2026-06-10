@@ -55,11 +55,17 @@ def bundle_image_webhook():
         if not bundle_name:
             return jsonify({"error": "Bundle name is empty"}), 400
 
+        
+        def extract_sku(value):
+            if isinstance(value, list):
+                return value[0] if value else ""
+            return value or ""
+
         skus = [
-            fields.get("SKU Product 1", ""),
-            fields.get("SKU Product 2", ""),
-            fields.get("SKU Product 3", ""),
-            fields.get("SKU Product 4", ""),
+            extract_sku(fields.get("SKU Product 1")),
+            extract_sku(fields.get("SKU Product 2")),
+            extract_sku(fields.get("SKU Product 3")),
+            extract_sku(fields.get("SKU Product 4")),
         ]
         skus = [s.strip() for s in skus if s and s.strip()]
 

@@ -20,33 +20,44 @@ HEADERS = {
 def get_product_images_by_sku(sku: str) -> list[dict]:
     """
     Find Shopify product images for a given SKU.
-    Returns list of dicts with 'src' and 'alt' keys.
+    Uses product search by SKU via GraphQL-style REST search.
     """
-    # Step 1: find the variant by SKU
-    url = f"{BASE_URL}/variants.json"
-    params = {"fields": "id,sku,product_id", "limit": 250}
-    response = requests.get(url, headers=HEADERS, params=params)
-    response.raise_for_status()
-    variants = response.json().get("variants", [])
-
-    product_id = None
-    for variant in variants:
-        if variant.get("sku", "").strip() == sku:
-            product_id = variant["product_id"]
+    # Search products that have this SKU
+    url = f"{BASE_URL}/products.json"
+    params = {"fields": "id,variants,images", "limit": 250}
+    
+    page_info = None
+    while True:
+        if page_info:
+            params["page_info"] = page_info
+        
+        response = requests.get(url, headers=HEADERS, params=params)
+        response.raise_for_status()
+        products = response.json().get("products", [])
+        
+        for product in products:
+            for variant in product.get("variants", []):
+                if variant.get("sku", "").strip() == sku:
+                    return [
+                        {"src": img["src"], "alt": img.get("alt") or ""}
+                        for img in product.get("images", [])
+                    ]
+        
+        # Check for next page
+        link_header = response.headers.get("Link", "")
+        if 'rel="next"' in link_header:
+            import re
+            match = re.search(r'page_info=([^&>]+).*rel="next"', link_header)
+            if match:
+                page_info = match.group(1)
+                params = {"fields": "id,variants,images", "limit": 250, "page_info": page_info}
+            else:
+                break
+        else:
             break
-
-    if not product_id:
-        logger.warning(f"No Shopify variant found for SKU: {sku}")
-        return []
-
-    # Step 2: fetch product images
-    images_url = f"{BASE_URL}/products/{product_id}/images.json"
-    img_response = requests.get(images_url, headers=HEADERS)
-    img_response.raise_for_status()
-    images = img_response.json().get("images", [])
-
-    return [{"src": img["src"], "alt": img.get("alt") or ""} for img in images]
-
+    
+    logger.warning(f"No Shopify variant found for SKU: {sku}")
+    return []
 
 def _get_bundle_product_id(bundle_sku: str) -> str | None:
     """Find the Shopify product ID for the bundle by its SKU."""

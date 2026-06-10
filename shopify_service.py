@@ -37,7 +37,7 @@ def get_product_images_by_sku(sku: str) -> list[dict]:
         
         for product in products:
             for variant in product.get("variants", []):
-                if variant.get("sku", "").strip() == sku:
+                if (variant.get("sku") or "").strip() == sku:
                     return [
                         {"src": img["src"], "alt": img.get("alt") or ""}
                         for img in product.get("images", [])

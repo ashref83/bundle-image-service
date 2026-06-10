@@ -6,6 +6,7 @@ from flask import Flask, request, jsonify
 from airtable_service import get_bundle_record, mark_bundle_image_created
 from shopify_service import get_product_images_by_sku, upload_images_to_bundle
 from gemini_service import generate_bundle_image
+from flask import redirect
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -127,6 +128,38 @@ def bundle_image_webhook():
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"}), 200
+
+CLIENT_ID = os.environ.get("SHOPIFY_CLIENT_ID")
+CLIENT_SECRET = os.environ.get("SHOPIFY_CLIENT_SECRET")
+REDIRECT_URI = os.environ.get("SHOPIFY_REDIRECT_URI")
+
+@app.route("/auth")
+def auth():
+    shop = os.environ.get("SHOPIFY_STORE")
+    scopes = "read_products,write_products"
+    auth_url = (
+        f"https://{shop}/admin/oauth/authorize"
+        f"?client_id={CLIENT_ID}"
+        f"&scope={scopes}"
+        f"&redirect_uri={REDIRECT_URI}"
+    )
+    return redirect(auth_url)
+
+@app.route("/auth/callback")
+def auth_callback():
+    code = request.args.get("code")
+    shop = request.args.get("shop")
+    response = requests.post(f"https://{shop}/admin/oauth/access_token", json={
+        "client_id": CLIENT_ID,
+        "client_secret": CLIENT_SECRET,
+        "code": code
+    })
+    token_data = response.json()
+    access_token = token_data.get("access_token")
+    return jsonify({
+        "access_token": access_token,
+        "message": "Copy this token and set it as SHOPIFY_ADMIN_TOKEN in Render!"
+    })
 
 
 if __name__ == "__main__":

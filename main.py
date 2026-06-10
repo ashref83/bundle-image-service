@@ -95,16 +95,15 @@ def bundle_image_webhook():
         bottle_filename = f"{bundle_name}.jpg"
         box_filename = f"{bundle_name}2.jpg"
 
+        async def generate_both():
+            bottle = await generate_bundle_image(bottle_urls, "bottles")
+            await asyncio.sleep(5)
+            box = await generate_bundle_image(box_urls, "boxes")
+            return bottle, box
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        async def generate_both():
-        bottle = await generate_bundle_image(bottle_urls, "bottles")
-        await asyncio.sleep(5)  # wait 5 seconds between calls
-        box = await generate_bundle_image(box_urls, "boxes")
-        return bottle, box
-
         bottle_bytes, box_bytes = loop.run_until_complete(generate_both())
-        
         loop.close()
 
         # 5. Upload both images to Shopify bundle product

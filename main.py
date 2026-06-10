@@ -1,6 +1,7 @@
 import os
 import re
 import asyncio
+import requests
 import logging
 from flask import Flask, request, jsonify
 from airtable_service import get_bundle_record, mark_bundle_image_created
